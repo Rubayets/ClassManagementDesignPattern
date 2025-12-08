@@ -13,5 +13,14 @@ public class StudentTest {
 
         
         facade.showAllStudents();
+        //test iterator pattern
+        System.out.println("Testing iterator pattern");
+        StudentIterator iterator = StudentRegistry.getInstance().iterator();
+
+        while (iterator.hasNext()) {
+            Student s = iterator.next();
+            System.out.println("Student: " + s.getName());
+        }
+
     }
 }

@@ -48,7 +48,7 @@ class AverageMarks implements MarksOperation {
     }
 }
 
- class ExactGrade implements gradingStrategy {
+class ExactGrade implements gradingStrategy {
     private MarksOperation averageMarks = new AverageMarks();
 
     @Override
@@ -64,7 +64,7 @@ class AverageMarks implements MarksOperation {
 }
 
 
- class PassFail implements gradingStrategy {
+class PassFail implements gradingStrategy {
     private MarksOperation averageMarks = new AverageMarks();
 
     @Override
@@ -95,19 +95,47 @@ class StudentRegistry {
         }
         System.out.println();
     }
+    //iterator  method
+    public StudentIterator iterator() {
+        return new StudentListIterator(students);
+    }
+
+}
+// ===== Iterator Pattern started   =====
+// ===== Iterator  interface started  =====
+interface StudentIterator {
+    boolean hasNext();
+    Student next();
 }
 
- class StudentManager {
+class StudentListIterator implements StudentIterator {
+    private List<Student> students;
+    private int index = 0;
+
+    public StudentListIterator(List<Student> students) {
+        this.students = students;
+    }
+
+    @Override
+    public boolean hasNext() {
+        return index < students.size();
+    }
+
+    @Override
+    public Student next() {
+        return students.get(index++);
+    }
+}
+// ===== Iterator Pattern End   =====
+
+
+class StudentManager {
     private Student student;
     private MarksOperation totalMarks = new TotalMarks();
     private MarksOperation averageMarks = new AverageMarks();
     private gradingStrategy grade;
 
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> 5f20628e8a9be8748166cf03292db59e38754b21
     private StudentRegistry registry = StudentRegistry.getInstance();
 
     public StudentManager(String name, int bangla, int english, int math, gradingStrategy grade) {
@@ -125,7 +153,7 @@ class StudentRegistry {
         System.out.println("--------------------");
     }
 }
- class StudentFacade {
+class StudentFacade {
     private StudentRegistry registry = StudentRegistry.getInstance();
 
     public StudentManager registerStudent(String name, int bangla, int english, int math, gradingStrategy strategy) {
@@ -141,4 +169,3 @@ class StudentRegistry {
         registry.showStudents();
     }
 }
-
