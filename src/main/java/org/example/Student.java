@@ -1,5 +1,8 @@
 package org.example;
 
+import java.util.ArrayList;
+import java.util.List;
+
 class Student {
     private String name;
     private int bangla;
@@ -25,7 +28,7 @@ interface MarksOperation {
 }
 
 
-interface GradingStrategy {
+interface gradingStrategy {
     String calculateGrade(Student student);
 }
 
@@ -37,7 +40,7 @@ class TotalMarks implements MarksOperation {
     }
 }
 
-// Average marks calculation
+
 class AverageMarks implements MarksOperation {
     @Override
     public double calculate(Student student) {
@@ -45,7 +48,7 @@ class AverageMarks implements MarksOperation {
     }
 }
 
-class ExactGrade implements GradingStrategy {
+class ExactGrade implements gradingStrategy {
     private MarksOperation averageMarks = new AverageMarks();
 
     @Override
@@ -61,7 +64,7 @@ class ExactGrade implements GradingStrategy {
 }
 
 
-class PassFail implements GradingStrategy {
+class PassFail implements gradingStrategy {
     private MarksOperation averageMarks = new AverageMarks();
 
     @Override
@@ -71,16 +74,43 @@ class PassFail implements GradingStrategy {
     }
 }
 
+class StudentRegistry {
+    private static StudentRegistry instance = new StudentRegistry();
+    private List<Student> students = new ArrayList<>();
+
+    private StudentRegistry() {}
+
+    public static StudentRegistry getInstance() {
+        return instance;
+    }
+
+    public void addStudent(Student s) {
+        students.add(s);
+    }
+
+    public void showStudents() {
+        System.out.println("All Registered Students:");
+        for (Student s : students) {
+            System.out.println("- " + s.getName());
+        }
+        System.out.println();
+    }
+}
 
 class StudentManager {
     private Student student;
     private MarksOperation totalMarks = new TotalMarks();
     private MarksOperation averageMarks = new AverageMarks();
-    private GradingStrategy grade;
+    private gradingStrategy grade;
 
-    public StudentManager(String name, int bangla, int english, int math, GradingStrategy grade) {
+    // Singleton instance
+    private StudentRegistry registry = StudentRegistry.getInstance();
+
+    public StudentManager(String name, int bangla, int english, int math, gradingStrategy grade) {
         this.student = new Student(name, bangla, english, math);
         this.grade = grade;
+
+        registry.addStudent(student);
     }
 
     public void showResult() {
@@ -91,3 +121,4 @@ class StudentManager {
         System.out.println("--------------------");
     }
 }
+
