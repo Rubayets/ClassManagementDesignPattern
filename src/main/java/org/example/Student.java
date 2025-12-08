@@ -78,7 +78,7 @@ class StudentRegistry {
     private static StudentRegistry instance = new StudentRegistry();
     private List<Student> students = new ArrayList<>();
 
-    // === Observer List ===
+    // Observer List
     private List<StudentObserver> observers = new ArrayList<>();
 
     private StudentRegistry() {}
@@ -118,8 +118,8 @@ class StudentRegistry {
     }
 }
 
-// ===== Iterator Pattern started   =====
-// ===== Iterator  interface started  =====
+//  Iterator Pattern started
+//  Iterator  interface started
 interface StudentIterator {
     boolean hasNext();
     Student next();
@@ -143,9 +143,9 @@ class StudentListIterator implements StudentIterator {
         return students.get(index++);
     }
 }
-// ===== Iterator Pattern End   =====
+//  Iterator Pattern End
 
-// ===== Observer Pattern  started =====
+//  Observer Pattern  started
 interface StudentObserver {
     void update(String message);
 }
@@ -155,7 +155,45 @@ class LoggerObserver implements StudentObserver {
         System.out.println("[LOG] " + message);
     }
 }
-// ===== Observer Pattern  end =====
+//  Observer Pattern  end
+
+// Command Pattern Started
+interface Command {
+    void execute();
+}
+class AddStudentCommand implements Command {
+    private StudentFacade facade;
+    private String name;
+    private int b, e, m;
+    private gradingStrategy strategy;
+
+    public AddStudentCommand(StudentFacade facade, String name, int b, int e, int m, gradingStrategy strategy) {
+        this.facade = facade;
+        this.name = name;
+        this.b = b;
+        this.e = e;
+        this.m = m;
+        this.strategy = strategy;
+    }
+
+    @Override
+    public void execute() {
+        facade.registerStudent(name, b, e, m, strategy);
+    }
+}
+class ShowAllStudentsCommand implements Command {
+    private StudentFacade facade;
+
+    public ShowAllStudentsCommand(StudentFacade facade) {
+        this.facade = facade;
+    }
+
+    @Override
+    public void execute() {
+        facade.showAllStudents();
+    }
+}
+//command pattern end
 
 
 class StudentManager {
