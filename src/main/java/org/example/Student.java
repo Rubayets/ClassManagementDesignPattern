@@ -48,7 +48,7 @@ class AverageMarks implements MarksOperation {
     }
 }
 
-class ExactGrade implements gradingStrategy {
+ class ExactGrade implements gradingStrategy {
     private MarksOperation averageMarks = new AverageMarks();
 
     @Override
@@ -64,7 +64,7 @@ class ExactGrade implements gradingStrategy {
 }
 
 
-class PassFail implements gradingStrategy {
+ class PassFail implements gradingStrategy {
     private MarksOperation averageMarks = new AverageMarks();
 
     @Override
@@ -97,13 +97,13 @@ class StudentRegistry {
     }
 }
 
-class StudentManager {
+ class StudentManager {
     private Student student;
     private MarksOperation totalMarks = new TotalMarks();
     private MarksOperation averageMarks = new AverageMarks();
     private gradingStrategy grade;
 
-    // Singleton instance
+
     private StudentRegistry registry = StudentRegistry.getInstance();
 
     public StudentManager(String name, int bangla, int english, int math, gradingStrategy grade) {
@@ -119,6 +119,22 @@ class StudentManager {
         System.out.println("Average: " + averageMarks.calculate(student));
         System.out.println("Grade: " + grade.calculateGrade(student));
         System.out.println("--------------------");
+    }
+}
+ class StudentFacade {
+    private StudentRegistry registry = StudentRegistry.getInstance();
+
+    public StudentManager registerStudent(String name, int bangla, int english, int math, gradingStrategy strategy) {
+        StudentManager manager = new StudentManager(name, bangla, english, math, strategy);
+        return manager;
+    }
+
+    public void showResult(StudentManager manager) {
+        manager.showResult();
+    }
+
+    public void showAllStudents() {
+        registry.showStudents();
     }
 }
 
