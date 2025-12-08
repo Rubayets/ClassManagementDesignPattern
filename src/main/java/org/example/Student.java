@@ -103,7 +103,7 @@ class StudentManager {
     private MarksOperation averageMarks = new AverageMarks();
     private gradingStrategy grade;
 
-    // Singleton instance
+    
     private StudentRegistry registry = StudentRegistry.getInstance();
 
     public StudentManager(String name, int bangla, int english, int math, gradingStrategy grade) {
