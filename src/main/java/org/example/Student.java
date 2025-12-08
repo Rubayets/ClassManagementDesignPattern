@@ -78,14 +78,30 @@ class StudentRegistry {
     private static StudentRegistry instance = new StudentRegistry();
     private List<Student> students = new ArrayList<>();
 
+    // === Observer List ===
+    private List<StudentObserver> observers = new ArrayList<>();
+
     private StudentRegistry() {}
 
     public static StudentRegistry getInstance() {
         return instance;
     }
 
+    // Add observer
+    public void addObserver(StudentObserver observer) {
+        observers.add(observer);
+    }
+
+    // Notify observers
+    private void notifyObservers(String message) {
+        for (StudentObserver o : observers) {
+            o.update(message);
+        }
+    }
+
     public void addStudent(Student s) {
         students.add(s);
+        notifyObservers("New student added: " + s.getName());
     }
 
     public void showStudents() {
@@ -95,12 +111,13 @@ class StudentRegistry {
         }
         System.out.println();
     }
-    //iterator  method
+
+    // iterator
     public StudentIterator iterator() {
         return new StudentListIterator(students);
     }
-
 }
+
 // ===== Iterator Pattern started   =====
 // ===== Iterator  interface started  =====
 interface StudentIterator {
@@ -127,6 +144,18 @@ class StudentListIterator implements StudentIterator {
     }
 }
 // ===== Iterator Pattern End   =====
+
+// ===== Observer Pattern  started =====
+interface StudentObserver {
+    void update(String message);
+}
+class LoggerObserver implements StudentObserver {
+    @Override
+    public void update(String message) {
+        System.out.println("[LOG] " + message);
+    }
+}
+// ===== Observer Pattern  end =====
 
 
 class StudentManager {
