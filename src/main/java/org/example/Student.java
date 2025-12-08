@@ -103,7 +103,11 @@ class StudentRegistry {
     private MarksOperation averageMarks = new AverageMarks();
     private gradingStrategy grade;
 
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 5f20628e8a9be8748166cf03292db59e38754b21
     private StudentRegistry registry = StudentRegistry.getInstance();
 
     public StudentManager(String name, int bangla, int english, int math, gradingStrategy grade) {
