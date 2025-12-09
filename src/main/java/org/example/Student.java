@@ -318,5 +318,25 @@ class StudentHistory { // Memento Pattern
     public void save(StudentMemento m) { list.add(m); }
     public StudentMemento get(int i) { return list.get(i); }
 }
+//adapter
+interface ReportFormat { // Adapter Pattern
+    String getReport();
+}
+
+class StudentReportAdapter implements ReportFormat { // Adapter Pattern
+    private Student student;
+
+    public StudentReportAdapter(Student student) {
+        this.student = student;
+    }
+
+    @Override
+    public String getReport() {
+        return "Report => Name: " + student.getName() +
+                ", Bangla: " + student.getBangla() +
+                ", English: " + student.getEnglish() +
+                ", Math: " + student.getMath();
+    }
+}
 
 
