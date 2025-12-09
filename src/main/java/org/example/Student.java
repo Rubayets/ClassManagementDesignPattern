@@ -194,6 +194,7 @@ class ShowAllStudentsCommand implements Command {
     }
 }
 //command pattern end
+//composite pattern start
 
 
 class StudentManager {
@@ -236,3 +237,40 @@ class StudentFacade {
         registry.showStudents();
     }
 }
+interface StudentComponent {      // Composite Pattern
+    void showInfo();
+}
+
+class StudentLeaf implements StudentComponent { // Composite Pattern
+    private Student student;
+
+    public StudentLeaf(Student student) {
+        this.student = student;
+    }
+
+    @Override
+    public void showInfo() {
+        System.out.println("Student: " + student.getName());
+    }
+}
+
+class StudentGroup implements StudentComponent { // Composite Pattern
+    private String groupName;
+    private List<StudentComponent> components = new ArrayList<>();
+
+    public StudentGroup(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public void add(StudentComponent c) { components.add(c); }
+
+    @Override
+    public void showInfo() {
+        System.out.println("Group: " + groupName);
+        for (StudentComponent c : components) {
+            c.showInfo();
+        }
+    }
+}
+
+
