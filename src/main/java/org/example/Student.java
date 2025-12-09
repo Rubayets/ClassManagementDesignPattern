@@ -272,5 +272,51 @@ class StudentGroup implements StudentComponent { // Composite Pattern
         }
     }
 }
+//memento
+class StudentMemento {  // Memento Pattern
+    private int b, e, m;
+
+    public StudentMemento(int b, int e, int m) {
+        this.b = b; this.e = e; this.m = m;
+    }
+
+    public int getBangla() { return b; }
+    public int getEnglish() { return e; }
+    public int getMath() { return m; }
+}
+
+class StudentStateManager { // Memento Pattern
+    private Student student;
+
+    public StudentStateManager(Student student) {
+        this.student = student;
+    }
+
+    public StudentMemento saveState() {
+        return new StudentMemento(student.getBangla(), student.getEnglish(), student.getMath());
+    }
+
+    public void restoreState(StudentMemento m) {
+        try {
+            var b = student.getClass().getDeclaredField("bangla");
+            var e = student.getClass().getDeclaredField("english");
+            var mt = student.getClass().getDeclaredField("math");
+
+            b.setAccessible(true);
+            e.setAccessible(true);
+            mt.setAccessible(true);
+
+            b.set(student, m.getBangla());
+            e.set(student, m.getEnglish());
+            mt.set(student, m.getMath());
+        } catch (Exception ex) { ex.printStackTrace(); }
+    }
+}
+
+class StudentHistory { // Memento Pattern
+    private List<StudentMemento> list = new ArrayList<>();
+    public void save(StudentMemento m) { list.add(m); }
+    public StudentMemento get(int i) { return list.get(i); }
+}
 
 
