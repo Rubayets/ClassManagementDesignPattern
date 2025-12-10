@@ -16,6 +16,10 @@ class Student {
         this.english = english;
         this.math = math;
     }
+    public void setBangla(int bangla) { this.bangla = bangla; }
+    public void setEnglish(int english) { this.english = english; }
+    public void setMath(int math) { this.math = math; }
+
 
     public String getName() { return name; }
     public int getBangla() { return bangla; }
