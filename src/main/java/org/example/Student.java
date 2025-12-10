@@ -3,6 +3,7 @@ package org.example;
 import java.util.ArrayList;
 import java.util.List;
 
+
 class Student {
     private String name;
     private int bangla;
@@ -22,16 +23,15 @@ class Student {
     public int getMath() { return math; }
 }
 
+// Strategy Pattern
 
 interface MarksOperation {
     double calculate(Student student);
 }
 
-
 interface gradingStrategy {
     String calculateGrade(Student student);
 }
-
 
 class TotalMarks implements MarksOperation {
     @Override
@@ -39,7 +39,6 @@ class TotalMarks implements MarksOperation {
         return student.getBangla() + student.getEnglish() + student.getMath();
     }
 }
-
 
 class AverageMarks implements MarksOperation {
     @Override
@@ -63,7 +62,6 @@ class ExactGrade implements gradingStrategy {
     }
 }
 
-
 class PassFail implements gradingStrategy {
     private MarksOperation averageMarks = new AverageMarks();
 
@@ -74,25 +72,53 @@ class PassFail implements gradingStrategy {
     }
 }
 
+
+// Simple Factory Pattern Added
+
+class StrategyFactory {
+
+    // Create Grading Strategy
+    public static gradingStrategy getGradingStrategy(String type) {
+        switch (type.toLowerCase()) {
+            case "exact":
+                return new ExactGrade();
+            case "passfail":
+                return new PassFail();
+            default:
+                throw new IllegalArgumentException("Unknown grading strategy: " + type);
+        }
+    }
+
+    // Create Marks Operation Strategy
+    public static MarksOperation getMarksOperation(String type) {
+        switch (type.toLowerCase()) {
+            case "total":
+                return new TotalMarks();
+            case "average":
+                return new AverageMarks();
+            default:
+                throw new IllegalArgumentException("Unknown marks operation: " + type);
+        }
+    }
+}
+
+
+// Singleton Pattern
+
 class StudentRegistry {
     private static StudentRegistry instance = new StudentRegistry();
     private List<Student> students = new ArrayList<>();
 
-    // Observer List
     private List<StudentObserver> observers = new ArrayList<>();
 
     private StudentRegistry() {}
 
-    public static StudentRegistry getInstance() {
-        return instance;
-    }
+    public static StudentRegistry getInstance() { return instance; }
 
-    // Add observer
     public void addObserver(StudentObserver observer) {
         observers.add(observer);
     }
 
-    // Notify observers
     private void notifyObservers(String message) {
         for (StudentObserver o : observers) {
             o.update(message);
@@ -112,14 +138,13 @@ class StudentRegistry {
         System.out.println();
     }
 
-    // iterator
     public StudentIterator iterator() {
         return new StudentListIterator(students);
     }
 }
 
-//  Iterator Pattern started
-//  Iterator  interface started
+// Iterator Pattern
+
 interface StudentIterator {
     boolean hasNext();
     Student next();
@@ -143,24 +168,26 @@ class StudentListIterator implements StudentIterator {
         return students.get(index++);
     }
 }
-//  Iterator Pattern End
 
-//  Observer Pattern  started
+// Observer Pattern
+
 interface StudentObserver {
     void update(String message);
 }
+
 class LoggerObserver implements StudentObserver {
     @Override
     public void update(String message) {
         System.out.println("[LOG] " + message);
     }
 }
-//  Observer Pattern  end
 
-// Command Pattern Started
+// Command Pattern
+
 interface Command {
     void execute();
 }
+
 class AddStudentCommand implements Command {
     private StudentFacade facade;
     private String name;
@@ -181,6 +208,7 @@ class AddStudentCommand implements Command {
         facade.registerStudent(name, b, e, m, strategy);
     }
 }
+
 class ShowAllStudentsCommand implements Command {
     private StudentFacade facade;
 
@@ -193,9 +221,8 @@ class ShowAllStudentsCommand implements Command {
         facade.showAllStudents();
     }
 }
-//command pattern end
-//composite pattern start
 
+// Composite Pattern
 
 class StudentManager {
     private Student student;
@@ -203,13 +230,11 @@ class StudentManager {
     private MarksOperation averageMarks = new AverageMarks();
     private gradingStrategy grade;
 
-
     private StudentRegistry registry = StudentRegistry.getInstance();
 
     public StudentManager(String name, int bangla, int english, int math, gradingStrategy grade) {
         this.student = new Student(name, bangla, english, math);
         this.grade = grade;
-
         registry.addStudent(student);
     }
 
@@ -221,6 +246,7 @@ class StudentManager {
         System.out.println("--------------------");
     }
 }
+
 class StudentFacade {
     private StudentRegistry registry = StudentRegistry.getInstance();
 
@@ -237,11 +263,12 @@ class StudentFacade {
         registry.showStudents();
     }
 }
-interface StudentComponent {      // Composite Pattern
+
+interface StudentComponent {
     void showInfo();
 }
 
-class StudentLeaf implements StudentComponent { // Composite Pattern
+class StudentLeaf implements StudentComponent {
     private Student student;
 
     public StudentLeaf(Student student) {
@@ -254,7 +281,7 @@ class StudentLeaf implements StudentComponent { // Composite Pattern
     }
 }
 
-class StudentGroup implements StudentComponent { // Composite Pattern
+class StudentGroup implements StudentComponent {
     private String groupName;
     private List<StudentComponent> components = new ArrayList<>();
 
@@ -262,7 +289,9 @@ class StudentGroup implements StudentComponent { // Composite Pattern
         this.groupName = groupName;
     }
 
-    public void add(StudentComponent c) { components.add(c); }
+    public void add(StudentComponent c) {
+        components.add(c);
+    }
 
     @Override
     public void showInfo() {
@@ -272,12 +301,16 @@ class StudentGroup implements StudentComponent { // Composite Pattern
         }
     }
 }
-//memento
-class StudentMemento {  // Memento Pattern
+
+// Memento Pattern
+
+class StudentMemento {
     private int b, e, m;
 
     public StudentMemento(int b, int e, int m) {
-        this.b = b; this.e = e; this.m = m;
+        this.b = b;
+        this.e = e;
+        this.m = m;
     }
 
     public int getBangla() { return b; }
@@ -285,7 +318,7 @@ class StudentMemento {  // Memento Pattern
     public int getMath() { return m; }
 }
 
-class StudentStateManager { // Memento Pattern
+class StudentStateManager {
     private Student student;
 
     public StudentStateManager(Student student) {
@@ -313,17 +346,19 @@ class StudentStateManager { // Memento Pattern
     }
 }
 
-class StudentHistory { // Memento Pattern
+class StudentHistory {
     private List<StudentMemento> list = new ArrayList<>();
     public void save(StudentMemento m) { list.add(m); }
     public StudentMemento get(int i) { return list.get(i); }
 }
-//adapter
-interface ReportFormat { // Adapter Pattern
+
+// Adapter Pattern
+
+interface ReportFormat {
     String getReport();
 }
 
-class StudentReportAdapter implements ReportFormat { // Adapter Pattern
+class StudentReportAdapter implements ReportFormat {
     private Student student;
 
     public StudentReportAdapter(Student student) {
@@ -338,5 +373,3 @@ class StudentReportAdapter implements ReportFormat { // Adapter Pattern
                 ", Math: " + student.getMath();
     }
 }
-
-
