@@ -1,6 +1,9 @@
 package org.example;
 
-public class Student {
+import java.util.ArrayList;
+import java.util.List;
+
+class Student {
     private String name;
     private int bangla;
     private int english;
@@ -12,40 +15,45 @@ public class Student {
         this.english = english;
         this.math = math;
     }
-    public Student(String name)
-    {
-        this.name = name;
-    }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
+    public int getBangla() { return bangla; }
+    public int getEnglish() { return english; }
+    public int getMath() { return math; }
+}
 
 
-    public int getMath()
-    {
-        return math;
-    }
-    public int getBangla()
-    {
-        return bangla;
-    }
-    public int getEnglish()
-    {
-        return english;
-    }
+interface MarksOperation {
+    double calculate(Student student);
+}
 
 
-    public int totalMarks() {
-        return bangla + english + math;
-    }
+interface gradingStrategy {
+    String calculateGrade(Student student);
+}
 
-    public double averageMarks() {
-        return totalMarks() / 3.0;
-    }
 
-    public String getGrade() {
-        double marks = averageMarks();
+class TotalMarks implements MarksOperation {
+    @Override
+    public double calculate(Student student) {
+        return student.getBangla() + student.getEnglish() + student.getMath();
+    }
+}
+
+
+class AverageMarks implements MarksOperation {
+    @Override
+    public double calculate(Student student) {
+        return (student.getBangla() + student.getEnglish() + student.getMath()) / 3.0;
+    }
+}
+
+class ExactGrade implements gradingStrategy {
+    private MarksOperation averageMarks = new AverageMarks();
+
+    @Override
+    public String calculateGrade(Student student) {
+        double marks = averageMarks.calculate(student);
         if (marks >= 80.0) return "A+";
         else if (marks >= 70.0) return "A";
         else if (marks >= 60.0) return "B";
@@ -54,3 +62,281 @@ public class Student {
         else return "F";
     }
 }
+
+
+class PassFail implements gradingStrategy {
+    private MarksOperation averageMarks = new AverageMarks();
+
+    @Override
+    public String calculateGrade(Student student) {
+        double marks = averageMarks.calculate(student);
+        return marks >= 40 ? "Pass" : "Fail";
+    }
+}
+
+class StudentRegistry {
+    private static StudentRegistry instance = new StudentRegistry();
+    private List<Student> students = new ArrayList<>();
+
+    // Observer List
+    private List<StudentObserver> observers = new ArrayList<>();
+
+    private StudentRegistry() {}
+
+    public static StudentRegistry getInstance() {
+        return instance;
+    }
+
+    // Add observer
+    public void addObserver(StudentObserver observer) {
+        observers.add(observer);
+    }
+
+    // Notify observers
+    private void notifyObservers(String message) {
+        for (StudentObserver o : observers) {
+            o.update(message);
+        }
+    }
+
+    public void addStudent(Student s) {
+        students.add(s);
+        notifyObservers("New student added: " + s.getName());
+    }
+
+    public void showStudents() {
+        System.out.println("All Registered Students:");
+        for (Student s : students) {
+            System.out.println("- " + s.getName());
+        }
+        System.out.println();
+    }
+
+    // iterator
+    public StudentIterator iterator() {
+        return new StudentListIterator(students);
+    }
+}
+
+//  Iterator Pattern started
+//  Iterator  interface started
+interface StudentIterator {
+    boolean hasNext();
+    Student next();
+}
+
+class StudentListIterator implements StudentIterator {
+    private List<Student> students;
+    private int index = 0;
+
+    public StudentListIterator(List<Student> students) {
+        this.students = students;
+    }
+
+    @Override
+    public boolean hasNext() {
+        return index < students.size();
+    }
+
+    @Override
+    public Student next() {
+        return students.get(index++);
+    }
+}
+//  Iterator Pattern End
+
+//  Observer Pattern  started
+interface StudentObserver {
+    void update(String message);
+}
+class LoggerObserver implements StudentObserver {
+    @Override
+    public void update(String message) {
+        System.out.println("[LOG] " + message);
+    }
+}
+//  Observer Pattern  end
+
+// Command Pattern Started
+interface Command {
+    void execute();
+}
+class AddStudentCommand implements Command {
+    private StudentFacade facade;
+    private String name;
+    private int b, e, m;
+    private gradingStrategy strategy;
+
+    public AddStudentCommand(StudentFacade facade, String name, int b, int e, int m, gradingStrategy strategy) {
+        this.facade = facade;
+        this.name = name;
+        this.b = b;
+        this.e = e;
+        this.m = m;
+        this.strategy = strategy;
+    }
+
+    @Override
+    public void execute() {
+        facade.registerStudent(name, b, e, m, strategy);
+    }
+}
+class ShowAllStudentsCommand implements Command {
+    private StudentFacade facade;
+
+    public ShowAllStudentsCommand(StudentFacade facade) {
+        this.facade = facade;
+    }
+
+    @Override
+    public void execute() {
+        facade.showAllStudents();
+    }
+}
+//command pattern end
+//composite pattern start
+
+
+class StudentManager {
+    private Student student;
+    private MarksOperation totalMarks = new TotalMarks();
+    private MarksOperation averageMarks = new AverageMarks();
+    private gradingStrategy grade;
+
+
+    private StudentRegistry registry = StudentRegistry.getInstance();
+
+    public StudentManager(String name, int bangla, int english, int math, gradingStrategy grade) {
+        this.student = new Student(name, bangla, english, math);
+        this.grade = grade;
+
+        registry.addStudent(student);
+    }
+
+    public void showResult() {
+        System.out.println("Name: " + student.getName());
+        System.out.println("Total: " + totalMarks.calculate(student));
+        System.out.println("Average: " + averageMarks.calculate(student));
+        System.out.println("Grade: " + grade.calculateGrade(student));
+        System.out.println("--------------------");
+    }
+}
+class StudentFacade {
+    private StudentRegistry registry = StudentRegistry.getInstance();
+
+    public StudentManager registerStudent(String name, int bangla, int english, int math, gradingStrategy strategy) {
+        StudentManager manager = new StudentManager(name, bangla, english, math, strategy);
+        return manager;
+    }
+
+    public void showResult(StudentManager manager) {
+        manager.showResult();
+    }
+
+    public void showAllStudents() {
+        registry.showStudents();
+    }
+}
+interface StudentComponent {      // Composite Pattern
+    void showInfo();
+}
+
+class StudentLeaf implements StudentComponent { // Composite Pattern
+    private Student student;
+
+    public StudentLeaf(Student student) {
+        this.student = student;
+    }
+
+    @Override
+    public void showInfo() {
+        System.out.println("Student: " + student.getName());
+    }
+}
+
+class StudentGroup implements StudentComponent { // Composite Pattern
+    private String groupName;
+    private List<StudentComponent> components = new ArrayList<>();
+
+    public StudentGroup(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public void add(StudentComponent c) { components.add(c); }
+
+    @Override
+    public void showInfo() {
+        System.out.println("Group: " + groupName);
+        for (StudentComponent c : components) {
+            c.showInfo();
+        }
+    }
+}
+//memento
+class StudentMemento {  // Memento Pattern
+    private int b, e, m;
+
+    public StudentMemento(int b, int e, int m) {
+        this.b = b; this.e = e; this.m = m;
+    }
+
+    public int getBangla() { return b; }
+    public int getEnglish() { return e; }
+    public int getMath() { return m; }
+}
+
+class StudentStateManager { // Memento Pattern
+    private Student student;
+
+    public StudentStateManager(Student student) {
+        this.student = student;
+    }
+
+    public StudentMemento saveState() {
+        return new StudentMemento(student.getBangla(), student.getEnglish(), student.getMath());
+    }
+
+    public void restoreState(StudentMemento m) {
+        try {
+            var b = student.getClass().getDeclaredField("bangla");
+            var e = student.getClass().getDeclaredField("english");
+            var mt = student.getClass().getDeclaredField("math");
+
+            b.setAccessible(true);
+            e.setAccessible(true);
+            mt.setAccessible(true);
+
+            b.set(student, m.getBangla());
+            e.set(student, m.getEnglish());
+            mt.set(student, m.getMath());
+        } catch (Exception ex) { ex.printStackTrace(); }
+    }
+}
+
+class StudentHistory { // Memento Pattern
+    private List<StudentMemento> list = new ArrayList<>();
+    public void save(StudentMemento m) { list.add(m); }
+    public StudentMemento get(int i) { return list.get(i); }
+}
+//adapter
+interface ReportFormat { // Adapter Pattern
+    String getReport();
+}
+
+class StudentReportAdapter implements ReportFormat { // Adapter Pattern
+    private Student student;
+
+    public StudentReportAdapter(Student student) {
+        this.student = student;
+    }
+
+    @Override
+    public String getReport() {
+        return "Report => Name: " + student.getName() +
+                ", Bangla: " + student.getBangla() +
+                ", English: " + student.getEnglish() +
+                ", Math: " + student.getMath();
+    }
+}
+
+
