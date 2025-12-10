@@ -11,19 +11,15 @@ public class StudentUI extends JFrame {
     private StudentFacade facade = new StudentFacade();
     private StudentRegistry registry = StudentRegistry.getInstance();
 
-    // Separate table models for each tab
-    private DefaultTableModel studentListModel; // Show Students tab
-    private DefaultTableModel resultTableModel;  // Show Result tab
+    private DefaultTableModel studentListModel;
+    private DefaultTableModel resultTableModel;
 
     private JTextField nameField, banglaField, englishField, mathField;
     private JComboBox<String> gradingViewComboBox;
 
-    // Tables
-    private JTable studentListTable; // Show Students
-    private JTable resultTable;      // Show Result
+    private JTable studentListTable;
+    private JTable resultTable;
 
-    // Memento
-    private List<StudentStateManager> stateManagers = new ArrayList<>();
     private List<StudentMemento> mementos = new ArrayList<>();
 
     public StudentUI() {
@@ -33,7 +29,6 @@ public class StudentUI extends JFrame {
         setLocationRelativeTo(null);
 
         JTabbedPane tabbedPane = new JTabbedPane();
-
         tabbedPane.addTab("Add Student", addStudentPanel());
         tabbedPane.addTab("Show Students", showStudentsPanel());
         tabbedPane.addTab("Show Result", showResultPanel());
@@ -74,19 +69,16 @@ public class StudentUI extends JFrame {
                 int eng = Integer.parseInt(englishField.getText());
                 int m = Integer.parseInt(mathField.getText());
 
-                // Default grading strategy is ExactGrade
-                gradingStrategy strategy = new ExactGrade();
+                gradingStrategy strategy = new ExactGrade(); // default
                 StudentManager manager = facade.registerStudent(name,b,eng,m,strategy);
 
-                // Save state for Memento
-                StudentStateManager sm = new StudentStateManager(getLastStudent());
-                stateManagers.add(sm);
-                mementos.add(sm.saveState());
+                // Save initial state
+                mementos.add(new StudentMemento(b,eng,m));
 
-                JOptionPane.showMessageDialog(this, "Student Added Successfully!");
+                JOptionPane.showMessageDialog(this,"Student Added Successfully!");
                 refreshStudentListTable();
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Please enter valid numeric marks!");
+                JOptionPane.showMessageDialog(this,"Please enter valid numeric marks!");
             }
         });
 
@@ -99,8 +91,7 @@ public class StudentUI extends JFrame {
 
         studentListModel = new DefaultTableModel(new String[]{"Name","Bangla","English","Math"},0);
         studentListTable = new JTable(studentListModel);
-        JScrollPane scrollPane = new JScrollPane(studentListTable);
-        panel.add(scrollPane, BorderLayout.CENTER);
+        panel.add(new JScrollPane(studentListTable), BorderLayout.CENTER);
 
         JButton refreshBtn = new JButton("Refresh");
         panel.add(refreshBtn, BorderLayout.SOUTH);
@@ -115,10 +106,9 @@ public class StudentUI extends JFrame {
 
         resultTableModel = new DefaultTableModel(new String[]{"Name","Total","Average","Grade"},0);
         resultTable = new JTable(resultTableModel);
-        JScrollPane scrollPane = new JScrollPane(resultTable);
-        panel.add(scrollPane, BorderLayout.CENTER);
+        panel.add(new JScrollPane(resultTable), BorderLayout.CENTER);
 
-        gradingViewComboBox = new JComboBox<>(new String[]{"Exact Grade", "Pass/Fail"});
+        gradingViewComboBox = new JComboBox<>(new String[]{"Exact Grade","Pass/Fail"});
         panel.add(gradingViewComboBox, BorderLayout.NORTH);
 
         JButton showBtn = new JButton("Show Result");
@@ -149,10 +139,18 @@ public class StudentUI extends JFrame {
         panel.add(math);
 
         JButton updateBtn = new JButton("Update Marks");
-        panel.add(updateBtn);
-
         JButton restoreBtn = new JButton("Restore Marks");
+        panel.add(updateBtn);
         panel.add(restoreBtn);
+
+        panel.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentShown(ComponentEvent ce) {
+                studentCombo.removeAllItems();
+                StudentIterator it = registry.iterator();
+                while(it.hasNext()) studentCombo.addItem(it.next().getName());
+            }
+        });
 
         updateBtn.addActionListener(e -> {
             int index = studentCombo.getSelectedIndex();
@@ -163,37 +161,29 @@ public class StudentUI extends JFrame {
                 int eng = Integer.parseInt(english.getText());
                 int m = Integer.parseInt(math.getText());
 
-                StudentMemento newState = new StudentMemento(b,eng,m);
-                mementos.set(index,newState);
-
-                StudentStateManager sm = stateManagers.get(index);
-                sm.restoreState(newState);
+                student.setBangla(b);
+                student.setEnglish(eng);
+                student.setMath(m);
 
                 JOptionPane.showMessageDialog(this,"Marks Updated!");
                 refreshStudentListTable();
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Please enter valid numeric marks!");
+            } catch(NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this,"Please enter valid numeric marks!");
             }
         });
 
         restoreBtn.addActionListener(e -> {
             int index = studentCombo.getSelectedIndex();
             if(index<0) return;
-
-            StudentStateManager sm = stateManagers.get(index);
+            Student student = getStudentAt(index);
             StudentMemento mem = mementos.get(index);
-            sm.restoreState(mem);
+
+            student.setBangla(mem.getBangla());
+            student.setEnglish(mem.getEnglish());
+            student.setMath(mem.getMath());
+
             JOptionPane.showMessageDialog(this,"Marks Restored!");
             refreshStudentListTable();
-        });
-
-        panel.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentShown(ComponentEvent ce) {
-                studentCombo.removeAllItems();
-                StudentIterator it = registry.iterator();
-                while(it.hasNext()) studentCombo.addItem(it.next().getName());
-            }
         });
 
         return panel;
@@ -261,16 +251,9 @@ public class StudentUI extends JFrame {
         return panel;
     }
 
-    private Student getLastStudent() {
-        StudentIterator it = registry.iterator();
-        Student last = null;
-        while(it.hasNext()) last = it.next();
-        return last;
-    }
-
     private Student getStudentAt(int index) {
         StudentIterator it = registry.iterator();
-        int i = 0;
+        int i=0;
         while(it.hasNext()) {
             Student s = it.next();
             if(i==index) return s;
@@ -284,7 +267,7 @@ public class StudentUI extends JFrame {
         StudentIterator it = registry.iterator();
         while(it.hasNext()) {
             Student s = it.next();
-            studentListModel.addRow(new Object[]{s.getName(), s.getBangla(), s.getEnglish(), s.getMath()});
+            studentListModel.addRow(new Object[]{s.getName(),s.getBangla(),s.getEnglish(),s.getMath()});
         }
     }
 
@@ -298,8 +281,15 @@ public class StudentUI extends JFrame {
             double avg = new AverageMarks().calculate(s);
             String grade = view.equals("Exact Grade") ? new ExactGrade().calculateGrade(s)
                     : new PassFail().calculateGrade(s);
-            resultTableModel.addRow(new Object[]{s.getName(), total, avg, grade});
+            resultTableModel.addRow(new Object[]{s.getName(),total,avg,grade});
         }
+    }
+
+    private Student getLastStudent() {
+        StudentIterator it = registry.iterator();
+        Student last = null;
+        while(it.hasNext()) last = it.next();
+        return last;
     }
 
     public static void main(String[] args) {
