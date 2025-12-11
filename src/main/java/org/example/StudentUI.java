@@ -4,10 +4,11 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class StudentUI extends JFrame {
+
     private StudentFacade facade = new StudentFacade();
     private StudentRegistry registry = StudentRegistry.getInstance();
 
@@ -20,7 +21,7 @@ public class StudentUI extends JFrame {
     private JTable studentListTable;
     private JTable resultTable;
 
-    private List<StudentMemento> mementos = new ArrayList<>();
+    private Map<String, StudentMemento> mementoMap = new HashMap<>();
 
     public StudentUI() {
         setTitle("Student Management System");
@@ -40,8 +41,8 @@ public class StudentUI extends JFrame {
     }
 
     private JPanel addStudentPanel() {
-        JPanel panel = new JPanel(new GridLayout(5,2,10,10));
-        panel.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+        JPanel panel = new JPanel(new GridLayout(5, 2, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         panel.add(new JLabel("Name:"));
         nameField = new JTextField();
@@ -69,16 +70,16 @@ public class StudentUI extends JFrame {
                 int eng = Integer.parseInt(englishField.getText());
                 int m = Integer.parseInt(mathField.getText());
 
-                gradingStrategy strategy = new ExactGrade(); // default
-                StudentManager manager = facade.registerStudent(name,b,eng,m,strategy);
+                gradingStrategy strategy = new ExactGrade();
+                facade.registerStudent(name, b, eng, m, strategy); // FIXED MISSING ;
 
-                // Save initial state
-                mementos.add(new StudentMemento(b,eng,m));
+                // Save original marks for Memento
+                mementoMap.put(name, new StudentMemento(b, eng, m));
 
-                JOptionPane.showMessageDialog(this,"Student Added Successfully!");
+                JOptionPane.showMessageDialog(this, "Student Added Successfully!");
                 refreshStudentListTable();
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this,"Please enter valid numeric marks!");
+                JOptionPane.showMessageDialog(this, "Please enter valid numeric marks!");
             }
         });
 
@@ -87,9 +88,8 @@ public class StudentUI extends JFrame {
 
     private JPanel showStudentsPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        studentListModel = new DefaultTableModel(new String[]{"Name", "Bangla", "English", "Math"}, 0);
 
-        studentListModel = new DefaultTableModel(new String[]{"Name","Bangla","English","Math"},0);
         studentListTable = new JTable(studentListModel);
         panel.add(new JScrollPane(studentListTable), BorderLayout.CENTER);
 
@@ -102,25 +102,24 @@ public class StudentUI extends JFrame {
 
     private JPanel showResultPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 
-        resultTableModel = new DefaultTableModel(new String[]{"Name","Total","Average","Grade"},0);
+        resultTableModel = new DefaultTableModel(new String[]{"Name", "Total", "Average", "Grade"}, 0);
         resultTable = new JTable(resultTableModel);
         panel.add(new JScrollPane(resultTable), BorderLayout.CENTER);
 
-        gradingViewComboBox = new JComboBox<>(new String[]{"Exact Grade","Pass/Fail"});
+        gradingViewComboBox = new JComboBox<>(new String[]{"Exact Grade", "Pass/Fail"});
         panel.add(gradingViewComboBox, BorderLayout.NORTH);
 
         JButton showBtn = new JButton("Show Result");
         panel.add(showBtn, BorderLayout.SOUTH);
+
         showBtn.addActionListener(e -> showResults());
 
         return panel;
     }
 
     private JPanel updateMarksPanel() {
-        JPanel panel = new JPanel(new GridLayout(5,2,10,10));
-        panel.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+        JPanel panel = new JPanel(new GridLayout(6, 2, 10, 10));
 
         panel.add(new JLabel("Select Student:"));
         JComboBox<String> studentCombo = new JComboBox<>();
@@ -143,18 +142,19 @@ public class StudentUI extends JFrame {
         panel.add(updateBtn);
         panel.add(restoreBtn);
 
+        // Load student names dynamically
         panel.addComponentListener(new ComponentAdapter() {
-            @Override
             public void componentShown(ComponentEvent ce) {
                 studentCombo.removeAllItems();
                 StudentIterator it = registry.iterator();
-                while(it.hasNext()) studentCombo.addItem(it.next().getName());
+                while (it.hasNext()) studentCombo.addItem(it.next().getName());
             }
         });
 
         updateBtn.addActionListener(e -> {
             int index = studentCombo.getSelectedIndex();
-            if(index<0) return;
+            if (index < 0) return;
+
             Student student = getStudentAt(index);
             try {
                 int b = Integer.parseInt(bangla.getText());
@@ -165,24 +165,32 @@ public class StudentUI extends JFrame {
                 student.setEnglish(eng);
                 student.setMath(m);
 
-                JOptionPane.showMessageDialog(this,"Marks Updated!");
+                registry.updateStudent(student);
+                JOptionPane.showMessageDialog(this, "Marks Updated!");
                 refreshStudentListTable();
-            } catch(NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this,"Please enter valid numeric marks!");
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Please enter valid numeric marks!");
             }
         });
 
         restoreBtn.addActionListener(e -> {
             int index = studentCombo.getSelectedIndex();
-            if(index<0) return;
+            if (index < 0) return;
+
             Student student = getStudentAt(index);
-            StudentMemento mem = mementos.get(index);
+            StudentMemento mem = mementoMap.get(student.getName());
+
+            if (mem == null) {
+                JOptionPane.showMessageDialog(this, "No saved original marks found!");
+                return;
+            }
 
             student.setBangla(mem.getBangla());
             student.setEnglish(mem.getEnglish());
             student.setMath(mem.getMath());
 
-            JOptionPane.showMessageDialog(this,"Marks Restored!");
+            registry.updateStudent(student);
+            JOptionPane.showMessageDialog(this, "Marks Restored!");
             refreshStudentListTable();
         });
 
@@ -191,10 +199,8 @@ public class StudentUI extends JFrame {
 
     private JPanel reportsPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 
         JTextArea reportArea = new JTextArea();
-        reportArea.setEditable(false);
         panel.add(new JScrollPane(reportArea), BorderLayout.CENTER);
 
         JButton reportBtn = new JButton("Generate Report");
@@ -205,16 +211,19 @@ public class StudentUI extends JFrame {
         btnPanel.add(reportBtn);
         btnPanel.add(highestBtn);
         btnPanel.add(topperBtn);
+
         panel.add(btnPanel, BorderLayout.SOUTH);
 
         reportBtn.addActionListener(e -> {
             StringBuilder sb = new StringBuilder();
             StudentIterator it = registry.iterator();
-            while(it.hasNext()) {
+
+            while (it.hasNext()) {
                 Student s = it.next();
                 StudentReportAdapter adapter = new StudentReportAdapter(s);
                 sb.append(adapter.getReport()).append("\n");
             }
+
             reportArea.setText(sb.toString());
         });
 
@@ -222,30 +231,36 @@ public class StudentUI extends JFrame {
             StudentIterator it = registry.iterator();
             Student highest = null;
             double max = -1;
-            while(it.hasNext()) {
+
+            while (it.hasNext()) {
                 Student s = it.next();
                 double total = new TotalMarks().calculate(s);
-                if(total>max) {
+                if (total > max) {
                     max = total;
                     highest = s;
                 }
             }
-            reportArea.setText("Highest Total Marks: " + highest.getName() + " = " + max);
+
+            if (highest != null)
+                reportArea.setText("Highest Total Marks: " + highest.getName() + " = " + max);
         });
 
         topperBtn.addActionListener(e -> {
             StudentIterator it = registry.iterator();
             Student topper = null;
             double maxAvg = -1;
-            while(it.hasNext()) {
+
+            while (it.hasNext()) {
                 Student s = it.next();
                 double avg = new AverageMarks().calculate(s);
-                if(avg>maxAvg) {
+                if (avg > maxAvg) {
                     maxAvg = avg;
                     topper = s;
                 }
             }
-            reportArea.setText("Topper: " + topper.getName() + " with Average: " + maxAvg);
+
+            if (topper != null)
+                reportArea.setText("Topper: " + topper.getName() + " with Average: " + maxAvg);
         });
 
         return panel;
@@ -253,10 +268,11 @@ public class StudentUI extends JFrame {
 
     private Student getStudentAt(int index) {
         StudentIterator it = registry.iterator();
-        int i=0;
-        while(it.hasNext()) {
+        int i = 0;
+
+        while (it.hasNext()) {
             Student s = it.next();
-            if(i==index) return s;
+            if (i == index) return s;
             i++;
         }
         return null;
@@ -265,31 +281,29 @@ public class StudentUI extends JFrame {
     private void refreshStudentListTable() {
         studentListModel.setRowCount(0);
         StudentIterator it = registry.iterator();
-        while(it.hasNext()) {
+
+        while (it.hasNext()) {
             Student s = it.next();
-            studentListModel.addRow(new Object[]{s.getName(),s.getBangla(),s.getEnglish(),s.getMath()});
+            studentListModel.addRow(new Object[]{s.getName(), s.getBangla(), s.getEnglish(), s.getMath()});
         }
     }
 
     private void showResults() {
         resultTableModel.setRowCount(0);
         String view = (String) gradingViewComboBox.getSelectedItem();
+
         StudentIterator it = registry.iterator();
-        while(it.hasNext()) {
+        while (it.hasNext()) {
             Student s = it.next();
             double total = new TotalMarks().calculate(s);
             double avg = new AverageMarks().calculate(s);
-            String grade = view.equals("Exact Grade") ? new ExactGrade().calculateGrade(s)
-                    : new PassFail().calculateGrade(s);
-            resultTableModel.addRow(new Object[]{s.getName(),total,avg,grade});
-        }
-    }
 
-    private Student getLastStudent() {
-        StudentIterator it = registry.iterator();
-        Student last = null;
-        while(it.hasNext()) last = it.next();
-        return last;
+            String grade = view.equals("Exact Grade")
+                    ? new ExactGrade().calculateGrade(s)
+                    : new PassFail().calculateGrade(s);
+
+            resultTableModel.addRow(new Object[]{s.getName(), total, avg, grade});
+        }
     }
 
     public static void main(String[] args) {

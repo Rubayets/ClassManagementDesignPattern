@@ -115,11 +115,15 @@ class StudentRegistry {
 
     private List<StudentObserver> observers = new ArrayList<>();
 
-    private StudentRegistry() {}
+    private StudentDAO dao = new StudentDAO();
+    private StudentRegistry() {
+        students.addAll(dao.getAllStudents());
+    }
 
     public static StudentRegistry getInstance() { return instance; }
 
     public void addObserver(StudentObserver observer) {
+
         observers.add(observer);
     }
 
@@ -131,6 +135,7 @@ class StudentRegistry {
 
     public void addStudent(Student s) {
         students.add(s);
+        dao.insertStudent(s);
         notifyObservers("New student added: " + s.getName());
     }
 
@@ -144,6 +149,10 @@ class StudentRegistry {
 
     public StudentIterator iterator() {
         return new StudentListIterator(students);
+    }
+    //Update Student
+    public void updateStudent(Student s) {
+        dao.updateStudentMarks(s);
     }
 }
 
